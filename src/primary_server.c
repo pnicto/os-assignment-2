@@ -59,7 +59,7 @@ void *threadFunc (void *arg){
   int shmid;
   struct shmseg *shmp;
     
-  shmid = shmget(msg->sequenceNumber, sizeof(struct shmseg), IPC_CREAT | 0644);
+  shmid = shmget(msg->sequenceNumber, sizeof(struct shmseg), PERMS);
   if (shmid == -1)
     perror("shmget");
   

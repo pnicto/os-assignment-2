@@ -32,12 +32,12 @@ int main()
                    0) == -1)
         {
             perror("Error receiving message in msgrcv");
-            if (errno != EIDRM)
-            {
-                printf("Attempting to cleanup...\n");
-                // cleanupServer(messageQueueID);
-            }
+            
             exit(1);
+        }
+
+        if (messageBuffer.sequenceNumber == -1){
+            // cleanup
         }
 
         if (messageBuffer.operationNumber <= 2)
