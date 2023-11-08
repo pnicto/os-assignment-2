@@ -16,6 +16,12 @@ struct MessageBuffer {
   char graphFileName[BUFFER_SIZE];
 };
 
+struct shmseg {
+  int cnt;    // Number of bytes written to adjMatrix
+  int nodes;
+  char adjMatrix[BUFFER_SIZE];
+};
+
 extern int serverCreationStatus;
 
 #endif
