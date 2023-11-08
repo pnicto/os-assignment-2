@@ -21,8 +21,6 @@ int main()
     }
 
     printf("Load balancer initialized. Listening for requests.\n");
-    
-   // int serverCreationStatus = 0;
 
     while (1)
     {

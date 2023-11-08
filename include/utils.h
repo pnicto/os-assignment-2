@@ -22,6 +22,4 @@ struct shmseg {
   char adjMatrix[BUFFER_SIZE];
 };
 
-extern int serverCreationStatus;
-
 #endif
