@@ -13,5 +13,4 @@
 
 #include "utils.h"
 
-#define MAX_CLIENTS 90
 #endif

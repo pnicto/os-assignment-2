@@ -4,7 +4,6 @@
 int main()
 {
     printf("Initializing load balancer...\n");
-//    bool existingClients[MAX_CLIENTS] = {0};
 
     int messageQueueID;
     key_t messageQueueKey;
@@ -39,13 +38,6 @@ int main()
                 // cleanupServer(messageQueueID);
             }
             exit(1);
-        }
-
-        if (messageBuffer.mtype == 1)
-        {
-            // receive message
-            printf("Exiting...\n");
-            exit(0);
         }
 
         if (messageBuffer.operationNumber <= 2)
