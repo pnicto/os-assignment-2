@@ -1,6 +1,6 @@
 # Compiler and flags
 CC := gcc
-CFLAGS := -g -Wall -Wextra -Iinclude -Wconversion -pedantic-errors -Werror
+CFLAGS := -g -Wall -Wextra -Iinclude -Wconversion -pedantic-errors -Werror -pthread
 
 # Source directory, target directory, and source files
 DEPS := include/utils.h
