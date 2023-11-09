@@ -1,4 +1,5 @@
 #include "../include/load_balancer.h"
+#include <stdio.h>
 
 int main()
 {
@@ -50,8 +51,10 @@ int main()
                 messageBuffer.mtype = 4;
         }
 
-        msgsnd(messageQueueID, &messageBuffer,
-               sizeof(messageBuffer) - sizeof(messageBuffer.mtype), 0);
+        if (msgsnd(messageQueueID, &messageBuffer,
+                   sizeof(messageBuffer) - sizeof(messageBuffer.mtype),
+                   0) == -1)
+            perror("Error in sending the message.");
     }
     return 0;
 }
