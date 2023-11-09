@@ -13,8 +13,28 @@
 
 #include "utils.h"
 
+struct ThreadArgs
+{
+    int messageQueueID;
+    struct MessageBuffer messageBuffer;
+};
+
+struct DfsThreadArgs
+{
+    int vertex;
+    int previousVertex;
+    int nodeCount;
+    int *adjMatrix;
+    pthread_mutex_t *mutex;
+    int *output;
+    int *outputLength;
+    struct DfsThreadArgs *args;
+};
+
 static void *threadFunc(void *arg);
-void bfs();
-void dfs();
+void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID);
+void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID);
+
+static void *dfsThreadFunction(void *args);
 
 #endif
