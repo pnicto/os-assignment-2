@@ -6,20 +6,20 @@
 #define PERMS 0644
 #define PATHNAME "./src/load_balancer.c"
 #define PROJ_ID 'C'
-#define BUFFER_SIZE 200
+#define FILE_NAME_SIZE 20
+#define MATRIX_SIZE 2000
 
 struct MessageBuffer {
   long mtype;
-  int clientID;
   int sequenceNumber;
   int operationNumber;
-  char graphFileName[BUFFER_SIZE];
+  char graphFileName[FILE_NAME_SIZE];
 };
 
 struct shmseg {
-  int cnt;    // Number of bytes written to adjMatrix
+  int cnt;  // Number of bytes written to adjMatrix
   int nodes;
-  char adjMatrix[BUFFER_SIZE];
+  char adjMatrix[MATRIX_SIZE];
 };
 
 #endif
