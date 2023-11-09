@@ -1,5 +1,4 @@
 #include "../include/primary_server.h"
-#include "../include/utils.h"
 
 int main() {
   printf("Initializing primary server...\n");

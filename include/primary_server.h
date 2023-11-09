@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "utils.h"
+
 static void *threadFunc(void *arg);
 void addGraph();
 void modifyGraph();
