@@ -177,11 +177,11 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
         printf("\n");
     }
 
-    char responseString[RESPONSE_SIZE];
+    char responseString[RESPONSE_SIZE] = {0};
 
     for (int i = 0; i < outputLength; i++)
     {
-        char tempString[RESPONSE_SIZE];
+        char tempString[RESPONSE_SIZE] = {0};
         sprintf(tempString, "%d ", output[i]);
         strcat(responseString, tempString);
     }
@@ -209,6 +209,7 @@ static void *dfsThreadFunction(void *args)
     int isLeaf = 1;
     pthread_t threads[threadArgs->nodeCount];
     int childThreadCount = 0;
+    struct DfsThreadArgs tArgs[threadArgs->nodeCount];
 
     for (int i = 0; i < threadArgs->nodeCount; i++)
     {
@@ -218,21 +219,21 @@ static void *dfsThreadFunction(void *args)
         {
             isLeaf = 0;
 
-            threadArgs->args[i].vertex = i;
-            threadArgs->args[i].previousVertex = threadArgs->vertex;
-            threadArgs->args[i].nodeCount = threadArgs->nodeCount;
-            threadArgs->args[i].adjMatrix = threadArgs->adjMatrix;
-            threadArgs->args[i].mutex = threadArgs->mutex;
-            threadArgs->args[i].output = threadArgs->output;
-            threadArgs->args[i].outputLength = threadArgs->outputLength;
-            threadArgs->args[i].args = threadArgs;
+            tArgs[i].vertex = i;
+            tArgs[i].previousVertex = threadArgs->vertex;
+            tArgs[i].nodeCount = threadArgs->nodeCount;
+            tArgs[i].adjMatrix = threadArgs->adjMatrix;
+            tArgs[i].mutex = threadArgs->mutex;
+            tArgs[i].output = threadArgs->output;
+            tArgs[i].outputLength = threadArgs->outputLength;
+            tArgs[i].args = args;
 
             pthread_create(&threads[childThreadCount], NULL, dfsThreadFunction,
-                           (void *)&threadArgs->args[i]);
+                           (void *)&tArgs[i]);
             childThreadCount++;
         }
     }
-
+    
     if (isLeaf)
     {
         pthread_mutex_lock(threadArgs->mutex);
