@@ -34,6 +34,7 @@ To run the code with and without the provided Makefile, you can follow these ins
 
      ```bash
      make run-my_program # for example here to run load_balancer.c you have to use make run-load_balancer
+     make run-secondary_server SNO=1 # this is needed for secondary server and this runs ./bin/secondary_server 1
      ```
 
 3. **Clean the build**:
