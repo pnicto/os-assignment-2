@@ -9,17 +9,19 @@
 #define FILE_NAME_SIZE 20
 #define MATRIX_SIZE 2000
 
-struct MessageBuffer {
-  long mtype;
-  int sequenceNumber;
-  int operationNumber;
-  char graphFileName[FILE_NAME_SIZE];
+struct MessageBuffer
+{
+    long mtype;
+    int sequenceNumber;
+    int operationNumber;
+    char graphFileName[FILE_NAME_SIZE];
 };
 
-struct shmseg {
-  int cnt;  // Number of bytes written to adjMatrix
-  int nodes;
-  char adjMatrix[MATRIX_SIZE];
+struct shmseg
+{
+    int cnt; // Number of bytes written to adjMatrix
+    int nodes;
+    char adjMatrix[MATRIX_SIZE];
 };
 
 #endif

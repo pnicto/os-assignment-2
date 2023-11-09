@@ -29,11 +29,12 @@ int main()
                    0) == -1)
         {
             perror("Error receiving message in msgrcv");
-            
+
             exit(1);
         }
 
-        if (messageBuffer.sequenceNumber == -1){
+        if (messageBuffer.sequenceNumber == -1)
+        {
             // cleanup
         }
 
@@ -50,7 +51,7 @@ int main()
         }
 
         msgsnd(messageQueueID, &messageBuffer,
-               sizeof(messageBuffer) - sizeof(messageBuffer.mtype), 0)  ;
+               sizeof(messageBuffer) - sizeof(messageBuffer.mtype), 0);
     }
     return 0;
 }
