@@ -42,63 +42,83 @@ int main()
         printf("Enter Graph File Name: ");
         scanf("%s", requestBuffer.graphFileName);
 
-        int shmid;
-        struct shmseg *shmp;
+        int shmId;
+        struct ShmSeg *shmSegPtr;
+        int *shmIntPtr;
 
-        shmid =
-            shmget(sequenceNumber, sizeof(struct shmseg), IPC_CREAT | PERMS);
-        if (shmid == -1)
+        if (operationNumber <= 2)
         {
-            perror("shmget");
-            exit(1);
+            shmId = shmget(sequenceNumber, sizeof(struct ShmSeg),
+                           IPC_CREAT | PERMS);
+            if (shmId == -1)
+            {
+                perror("Error in shmget");
+                exit(1);
+            }
+
+            shmSegPtr = (struct ShmSeg *)shmat(shmId, NULL, 0);
+            if (shmSegPtr == (void *)-1)
+            {
+                perror("Error in shmat");
+                exit(1);
+            }
         }
-
-        shmp = (struct shmseg *)shmat(shmid, NULL, 0);
-        if (shmp == (void *)-1)
+        else
         {
-            perror("shmat");
-            exit(1);
+            shmId = shmget(sequenceNumber, sizeof(int), IPC_CREAT | PERMS);
+            if (shmId == -1)
+            {
+                perror("Error in shmget");
+                exit(1);
+            }
+
+            shmIntPtr = (int *)shmat(shmId, NULL, 0);
+            if (shmIntPtr == (void *)-1)
+            {
+                perror("Error in shmat");
+                exit(1);
+            }
         }
 
         switch (operationNumber)
         {
         case 1: {
             printf("Enter the number of nodes in the graph: ");
-            scanf("%d", &(shmp->nodes));
+            scanf("%d", &(shmSegPtr->nodes));
             // Do error handling here for nodes.
             printf("Enter adjacency matrix, each row on a separate line and "
                    "elements "
                    "of a single row separated by whitespace characters\n");
             getchar();
-            for (int i = 0; i < shmp->nodes; i++)
+            for (int i = 0; i < shmSegPtr->nodes; i++)
             {
                 // Figure out length of string for input here.
-                fgets(shmp->adjMatrix + (100 * i), 100, stdin);
+                fgets(shmSegPtr->adjMatrix + (100 * i), 100, stdin);
             }
         }
         break;
         case 2: {
             printf("Enter the number of nodes in the graph: ");
-            scanf("%d", &(shmp->nodes));
+            scanf("%d", &(shmSegPtr->nodes));
             printf("Enter adjacency matrix, each row on a separate line and "
                    "elements "
                    "of a single row separated by whitespace characters\n");
             getchar();
-            for (int i = 0; i < shmp->nodes; i++)
+            for (int i = 0; i < shmSegPtr->nodes; i++)
             {
                 // Figure out length of string for input here.
-                fgets(shmp->adjMatrix + (100 * i), 100, stdin);
+                fgets(shmSegPtr->adjMatrix + (100 * i), 100, stdin);
             }
         }
         break;
         case 3: {
             printf("Enter starting vertex: ");
-            scanf("%d", &(shmp->nodes));
+            scanf("%d", &(shmIntPtr[0]));
         }
         break;
         case 4: {
             printf("Enter starting vertex: ");
-            scanf("%d", &(shmp->nodes));
+            scanf("%d", &(shmIntPtr[0]));
         }
         break;
         default:
@@ -111,7 +131,7 @@ int main()
                    0) == -1)
         {
             perror("Error sending message in msgsnd");
-            if (shmctl(shmid, IPC_RMID, 0) == -1)
+            if (shmctl(shmId, IPC_RMID, 0) == -1)
             {
                 perror("shmctl");
                 exit(1);
@@ -124,7 +144,7 @@ int main()
                    sequenceNumber + 10, 0) == -1)
         {
             perror("Error receiving message in msgrcv");
-            if (shmctl(shmid, IPC_RMID, 0) == -1)
+            if (shmctl(shmId, IPC_RMID, 0) == -1)
             {
                 perror("shmctl");
                 exit(1);
@@ -132,10 +152,10 @@ int main()
             exit(1);
         }
 
-        // TODO: Print output here as needed.
+        printf("%s\n", responseBuffer.response);
 
         // Terminate Shared Memory instance.
-        if (shmctl(shmid, IPC_RMID, 0) == -1)
+        if (shmctl(shmId, IPC_RMID, 0) == -1)
         {
             perror("shmctl");
             exit(1);

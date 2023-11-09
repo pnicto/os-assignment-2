@@ -56,14 +56,14 @@ int main()
 void *threadFunc(void *arg)
 {
     struct MessageBuffer *msg = (struct MessageBuffer *)arg;
-    int shmid;
+    int shmId;
     struct shmseg *shmp;
 
-    shmid = shmget(msg->sequenceNumber, sizeof(struct shmseg), PERMS);
-    if (shmid == -1)
+    shmId = shmget(msg->sequenceNumber, sizeof(struct ShmSeg), PERMS);
+    if (shmId == -1)
         perror("shmget");
 
-    shmp = shmat(shmid, NULL, 0);
+    shmp = shmat(shmId, NULL, 0);
     if (shmp == (void *)-1)
         perror("shmat");
 

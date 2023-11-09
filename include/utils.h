@@ -8,6 +8,7 @@
 #define PROJ_ID 'C'
 #define FILE_NAME_SIZE 20
 #define MATRIX_SIZE 2000
+#define RESPONSE_SIZE 100
 
 struct MessageBuffer
 {
@@ -15,9 +16,10 @@ struct MessageBuffer
     int sequenceNumber;
     int operationNumber;
     char graphFileName[FILE_NAME_SIZE];
+    char response[RESPONSE_SIZE];
 };
 
-struct shmseg
+struct ShmSeg
 {
     int cnt; // Number of bytes written to adjMatrix
     int nodes;
