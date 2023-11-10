@@ -14,7 +14,8 @@
 #include "utils.h"
 
 static void *threadFunc(void *arg);
-void addGraph();
+void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
+              int messageQueueID);
 void modifyGraph();
 
 #endif

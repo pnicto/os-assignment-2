@@ -77,7 +77,8 @@ void *threadFunc(void *arg)
 
     if (threadArgs->messageBuffer.operationNumber == 1)
     {
-        addGraph();
+        addGraph(shmSegPtr, threadArgs->messageBuffer,
+                 threadArgs->messageQueueID);
     }
     else
     {
@@ -87,9 +88,31 @@ void *threadFunc(void *arg)
     return (void *)0;
 }
 
-void addGraph()
+void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg, int messageQueueID)
 {
-    // Add graph and send output through message queue
+    struct MessageBuffer responseBuffer;
+    responseBuffer.mtype = msg.sequenceNumber + 10;
+    responseBuffer.sequenceNumber = msg.sequenceNumber;
+    responseBuffer.operationNumber = msg.operationNumber;
+
+    FILE *fptr = fopen(msg.graphFileName, "w");
+
+    if (fptr != NULL)
+    {
+        for (int i = 0; i < shmp->nodes; i++)
+        {
+            fputs(shmp->adjMatrix + (100 * i), fptr);
+        }
+        fclose(fptr);
+        sprintf(responseBuffer.response, "File successfully added");
+    }
+
+    if (msgsnd(messageQueueID, &responseBuffer,
+               sizeof(responseBuffer) - sizeof(responseBuffer.mtype), 0) == -1)
+    {
+        perror("Error sending message in msgsnd");
+        exit(1);
+    }
 }
 
 void modifyGraph()
