@@ -40,8 +40,11 @@ int main()
         {
             // Perform cleanup, join threads etc...
         }
+        struct ThreadArgs threadArgs;
+        threadArgs.messageQueueID = messageQueueID;
+        threadArgs.messageBuffer = messageBuffer;
 
-        if (pthread_create(&threads[t], NULL, threadFunc, &messageBuffer))
+        if (pthread_create(&threads[t], NULL, threadFunc, &threadArgs))
         {
             perror("pthread_create");
             exit(1);
@@ -55,19 +58,24 @@ int main()
 
 void *threadFunc(void *arg)
 {
-    struct MessageBuffer *msg = (struct MessageBuffer *)arg;
+    struct ThreadArgs *threadArgs = (struct ThreadArgs *)arg;
     int shmId;
-    struct shmseg *shmp;
-
-    shmId = shmget(msg->sequenceNumber, sizeof(struct ShmSeg), PERMS);
+    struct ShmSeg *shmSegPtr;
+    shmId = shmget(threadArgs->messageBuffer.sequenceNumber,
+                   sizeof(struct ShmSeg), PERMS);
     if (shmId == -1)
-        perror("shmget");
+    {
+        perror("Error in shmget");
+        exit(1);
+    }
+    shmSegPtr = (struct ShmSeg *)shmat(shmId, NULL, 0);
+    if (shmSegPtr == (void *)-1)
+    {
+        perror("Error in shmat");
+        exit(1);
+    }
 
-    shmp = shmat(shmId, NULL, 0);
-    if (shmp == (void *)-1)
-        perror("shmat");
-
-    if (msg->operationNumber == 1)
+    if (threadArgs->messageBuffer.operationNumber == 1)
     {
         addGraph();
     }
