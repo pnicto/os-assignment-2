@@ -41,15 +41,22 @@ int main()
             // Perform cleanup, join threads etc...
             printf("Cleaning up primary server...\n");
 
-            while (1) {
+            while (1)
+            {
                 pid_t childPid = wait(NULL);
-                if (childPid > 0) {
-                printf("Waited for child process with pid %d\n", childPid);
-                } else if (childPid == -1) {
-                    if (errno == ECHILD) {
+                if (childPid > 0)
+                {
+                    printf("Waited for child process with pid %d\n", childPid);
+                }
+                else if (childPid == -1)
+                {
+                    if (errno == ECHILD)
+                    {
                         printf("No more children to wait for\n");
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         perror("Error waiting for child process");
                         exit(1);
                     }
@@ -114,18 +121,21 @@ void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg, int messageQueueID)
 
     FILE *fptr = fopen(msg.graphFileName, "w");
 
-    if (fptr != NULL)
+    if (fptr == NULL)
     {
-        char nodes[3];
-        sprintf(nodes, "%d\n", shmp->nodes);
-        fputs(nodes, fptr);
-        for (int i = 0; i < shmp->nodes; i++)
-        {
-            fputs(shmp->adjMatrix + (100 * i), fptr);
-        }
-        fclose(fptr);
-        sprintf(responseBuffer.response, "File successfully added");
+        perror("Error opening file");
+        exit(1);
     }
+
+    char nodes[3];
+    sprintf(nodes, "%d\n", shmp->nodes);
+    fputs(nodes, fptr);
+    for (int i = 0; i < shmp->nodes; i++)
+    {
+        fputs(shmp->adjMatrix + (100 * i), fptr);
+    }
+    fclose(fptr);
+    sprintf(responseBuffer.response, "File successfully added");
 
     if (msgsnd(messageQueueID, &responseBuffer,
                sizeof(responseBuffer) - sizeof(responseBuffer.mtype), 0) == -1)
