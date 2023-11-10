@@ -1,6 +1,7 @@
 #ifndef PRIMARY_SERVER_H
 #define PRIMARY_SERVER_H
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,15 +10,16 @@
 #include <sys/msg.h>
 #include <sys/shm.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <unistd.h>
 
 #include "utils.h"
 
 static void *threadFunc(void *arg);
 void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
               int messageQueueID);
-void modifyGraph();
+void modifyGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
+                 int messageQueueID);
+void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp);
 
 #endif
