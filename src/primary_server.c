@@ -99,6 +99,9 @@ void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg, int messageQueueID)
 
     if (fptr != NULL)
     {
+        char nodes[3];
+        sprintf(nodes, "%d\n", shmp->nodes);
+        fputs(nodes, fptr);
         for (int i = 0; i < shmp->nodes; i++)
         {
             fputs(shmp->adjMatrix + (100 * i), fptr);
