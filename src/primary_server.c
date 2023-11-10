@@ -110,7 +110,7 @@ void *threadFunc(void *arg)
                     threadArgs->messageQueueID);
     }
 
-    return (void *)0;
+    pthread_exit(NULL);
 }
 
 void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg, int messageQueueID)

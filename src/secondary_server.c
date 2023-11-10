@@ -46,15 +46,22 @@ int main(int argc, char *argv[])
             // Perform cleanup, join threads etc...
             printf("Cleaning up secondary server...\n");
 
-            while (1) {
+            while (1)
+            {
                 pid_t childPid = wait(NULL);
-                if (childPid > 0) {
-                printf("Waited for child process with pid %d\n", childPid);
-                } else if (childPid == -1) {
-                    if (errno == ECHILD) {
+                if (childPid > 0)
+                {
+                    printf("Waited for child process with pid %d\n", childPid);
+                }
+                else if (childPid == -1)
+                {
+                    if (errno == ECHILD)
+                    {
                         printf("No more children to wait for\n");
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         perror("Error waiting for child process");
                         exit(1);
                     }
@@ -219,8 +226,6 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
         perror("Error sending message in msgsnd");
         exit(1);
     }
-
-    pthread_exit(NULL);
 }
 
 static void *bfsThreadFunction(void *args)
@@ -380,8 +385,6 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
         perror("Error sending message in msgsnd");
         exit(1);
     }
-
-    pthread_exit(NULL);
 }
 
 static void *dfsThreadFunction(void *args)
