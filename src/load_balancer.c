@@ -1,5 +1,4 @@
 #include "../include/load_balancer.h"
-#include <stdio.h>
 
 int main()
 {
