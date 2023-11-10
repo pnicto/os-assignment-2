@@ -14,12 +14,6 @@
 
 #include "utils.h"
 
-struct ThreadArgs
-{
-    int messageQueueID;
-    struct MessageBuffer messageBuffer;
-};
-
 struct DfsThreadArgs
 {
     int vertex, previousVertex, nodeCount;

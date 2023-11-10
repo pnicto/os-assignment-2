@@ -26,4 +26,10 @@ struct ShmSeg
     char adjMatrix[MATRIX_SIZE];
 };
 
+struct ThreadArgs
+{
+    int messageQueueID;
+    struct MessageBuffer messageBuffer;
+};
+
 #endif
