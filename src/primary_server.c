@@ -38,31 +38,18 @@ int main()
 
         if (messageBuffer.sequenceNumber == -1)
         {
-            // Perform cleanup, join threads etc...
-            printf("Cleaning up primary server...\n");
-
-            while (1)
+            // Cleanup
+            for (int i = 0; i < t; i++)
             {
-                pid_t childPid = wait(NULL);
-                if (childPid > 0)
+                if (pthread_join(threads[i], NULL))
                 {
-                    printf("Waited for child process with pid %d\n", childPid);
-                }
-                else if (childPid == -1)
-                {
-                    if (errno == ECHILD)
-                    {
-                        printf("No more children to wait for\n");
-                        break;
-                    }
-                    else
-                    {
-                        perror("Error waiting for child process");
-                        exit(1);
-                    }
+                    perror("pthread_join");
+                    exit(1);
                 }
             }
-            break;
+            //is there anything else to do here?
+            printf("Terminating Primary Server...\n");
+            exit(0);
         }
         struct ThreadArgs threadArgs;
         threadArgs.messageQueueID = messageQueueID;

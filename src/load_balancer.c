@@ -63,14 +63,13 @@ int main()
             }
 
             sleep(5);
-            printf("Clearing message queue...\n");
-            if (msgsnd(messageQueueID, &requestBuffer,
-                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
-                perror("Error sending message in msgsnd");
+            printf("Removing message queue...\n");
+            if (msgctl(messageQueueID, IPC_RMID, NULL) == -1) {
+                perror("Removing queue failed");
                 exit(1);
             }
 
-            printf("Load Balancer exiting\n");
+            printf("Load Balancer exiting...\n");
             break;
         }
 
