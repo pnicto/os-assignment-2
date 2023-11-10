@@ -20,8 +20,20 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    (void)argc; // to get rid of unused parameter warning
+    if (argc < 2)
+    {
+        printf("Server number is needed as a command line argument\n");
+        exit(1);
+    }
+
     int serverID = atoi(argv[1]);
+
+    if (serverID < 1 || serverID > 2)
+    {
+        printf("Server number must be 1 or 2\n");
+        exit(1);
+    }
+
     printf("Secondary Server %d initialized. Listening for requests.\n",
            serverID);
 
