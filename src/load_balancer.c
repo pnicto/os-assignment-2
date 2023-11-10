@@ -33,9 +33,45 @@ int main()
             exit(1);
         }
 
-        if (messageBuffer.sequenceNumber == -1)
+        if (messageBuffer.sequenceNumber == -2)
         {
             // cleanup
+            struct MessageBuffer requestBuffer;
+            requestBuffer.mtype = 2;
+            requestBuffer.sequenceNumber = -1;
+
+            if (msgsnd(messageQueueID, &requestBuffer,
+                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                perror("Error sending message in msgsnd");
+                exit(1);
+            }
+            requestBuffer.mtype = 3;
+            requestBuffer.sequenceNumber = -1;
+
+            if (msgsnd(messageQueueID, &requestBuffer,
+                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                perror("Error sending message in msgsnd");
+                exit(1);
+            }
+            requestBuffer.mtype = 4;
+            requestBuffer.sequenceNumber = -1;
+
+            if (msgsnd(messageQueueID, &requestBuffer,
+                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                perror("Error sending message in msgsnd");
+                exit(1);
+            }
+
+            sleep(5);
+            printf("Clearing message queue...\n");
+            if (msgsnd(messageQueueID, &requestBuffer,
+                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                perror("Error sending message in msgsnd");
+                exit(1);
+            }
+
+            printf("Load Balancer exiting\n");
+            break;
         }
 
         if (messageBuffer.operationNumber <= 2)

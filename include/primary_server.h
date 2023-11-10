@@ -10,6 +10,8 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <errno.h>
 
 #include "utils.h"
 

@@ -44,6 +44,23 @@ int main(int argc, char *argv[])
         if (threadArgs.messageBuffer.sequenceNumber == -1)
         {
             // Perform cleanup, join threads etc...
+            printf("Cleaning up secondary server...\n");
+
+            while (1) {
+                pid_t childPid = wait(NULL);
+                if (childPid > 0) {
+                printf("Waited for child process with pid %d\n", childPid);
+                } else if (childPid == -1) {
+                    if (errno == ECHILD) {
+                        printf("No more children to wait for\n");
+                        break;
+                    } else {
+                        perror("Error waiting for child process");
+                        exit(1);
+                    }
+                }
+            }
+            break;
         }
 
         if (pthread_create(&threads[t], NULL, threadFunc, &threadArgs))
