@@ -2,6 +2,7 @@
 #define SECONDARY_SERVER_H
 
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,14 +22,21 @@ struct ThreadArgs
 
 struct DfsThreadArgs
 {
-    int vertex;
-    int previousVertex;
-    int nodeCount;
+    int vertex, previousVertex, nodeCount;
     int *adjMatrix;
-    pthread_mutex_t *mutex;
-    int *output;
-    int *outputLength;
+    int *output, *outputLength;
     struct DfsThreadArgs *args;
+    pthread_mutex_t *mutex;
+};
+
+struct BfsThreadArgs
+{
+    int vertex, previousVertex, nodeCount;
+    int *adjMatrix;
+    int *output, *outputLength, *threadCountCurrent, *threadCountNext;
+    struct BfsThreadArgs *args;
+    pthread_mutex_t *outputMutex, *countStartMutex, *countEndMutex;
+    sem_t *startSemaphore, *endSemaphore;
 };
 
 static void *threadFunc(void *arg);
@@ -36,5 +44,11 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID);
 void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID);
 
 static void *dfsThreadFunction(void *args);
+static void *bfsThreadFunction(void *args);
+
+void initBfsArgs(struct BfsThreadArgs *destination,
+                 const struct BfsThreadArgs *source, int vertex);
+void initDfsArgs(struct DfsThreadArgs *destination,
+                 const struct DfsThreadArgs *source, int vertex);
 
 #endif
