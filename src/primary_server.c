@@ -7,9 +7,7 @@ int extractNumber(char *filename)
     return number;
 }
 
-sem_t *readSemaphores[20];
 sem_t *writeSemaphores[20];
-int numReaders = 0;
 
 int main()
 {
@@ -19,14 +17,6 @@ int main()
     char filename[FILE_NAME_SIZE];
     for (int i = 1; i <= 20; i++)
     {
-        snprintf(filename, FILE_NAME_SIZE, READ_SEMAPHORE_FORMAT, i);
-        readSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
-        if (readSemaphores[i - 1] == SEM_FAILED)
-        {
-            perror("Error initializing read semaphore in sem_open");
-            exit(1);
-        }
-
         snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
         writeSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
         if (writeSemaphores[i - 1] == SEM_FAILED)

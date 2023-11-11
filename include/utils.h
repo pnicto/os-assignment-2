@@ -9,7 +9,7 @@
 #define FILE_NAME_SIZE 20
 #define MATRIX_SIZE 2000
 #define RESPONSE_SIZE 100
-#define READ_SEMAPHORE_FORMAT "/R_G%d"
+#define READ_COUNT_SEMAPHORE_NAME "/RCOUNT"
 #define WRITE_SEMAPHORE_FORMAT "/W_G%d"
 
 struct MessageBuffer

@@ -7,10 +7,9 @@ int extractNumber(char *filename)
     return number;
 }
 
-sem_t *readSemaphores[20];
 sem_t *writeSemaphores[20];
-int numReaders = 0;
-pthread_mutex_t readMutex;
+sem_t *readCountSemaphore;
+int numReaders;
 
 int main(int argc, char *argv[])
 {
@@ -20,14 +19,6 @@ int main(int argc, char *argv[])
     char filename[FILE_NAME_SIZE];
     for (int i = 1; i <= 20; i++)
     {
-        snprintf(filename, FILE_NAME_SIZE, READ_SEMAPHORE_FORMAT, i);
-        readSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
-        if (readSemaphores[i - 1] == SEM_FAILED)
-        {
-            perror("Error initializing read semaphore in sem_open");
-            exit(1);
-        }
-
         snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
         writeSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
         if (writeSemaphores[i - 1] == SEM_FAILED)
@@ -37,9 +28,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (pthread_mutex_init(&readMutex, NULL) != 0)
+    readCountSemaphore = sem_open(READ_COUNT_SEMAPHORE_NAME, O_EXCL, 0644, 1);
+    if (readCountSemaphore == SEM_FAILED)
     {
-        perror("pthread mutex init");
+        perror("Error initializing read count semaphore in sem_open");
         exit(1);
     }
 
@@ -159,6 +151,14 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     // TODO: Add named semaphore to make sure both read and write don't happen
     // together
+    sem_post(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 1)
+    {
+        int n = extractNumber(msg.graphFileName);
+        printf("Waiting for file\n");
+        sem_wait(writeSemaphores[n - 1]);
+    }
     FILE *fp = fopen(msg.graphFileName, "r");
 
     if (fp == NULL)
@@ -183,6 +183,13 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
     // TODO: release/increment semaphore
+    sem_wait(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 0)
+    {
+        int n = extractNumber(msg.graphFileName);
+        sem_post(writeSemaphores[n - 1]);
+    }
 
     /* outputLength is the number of vertices in the output array
 
@@ -350,8 +357,8 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     // TODO: Add named semaphore to make sure both read and write don't happen
     // together
-    pthread_mutex_lock(&readMutex);
-    numReaders++;
+    sem_post(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 1)
     {
         int n = extractNumber(msg.graphFileName);
@@ -384,8 +391,8 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
     // TODO: release/increment semaphore
-    pthread_mutex_lock(&readMutex);
-    numReaders--;
+    sem_wait(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 0)
     {
         int n = extractNumber(msg.graphFileName);
