@@ -19,6 +19,40 @@ int main()
         exit(1);
     }
 
+    // create named semaphores
+    sem_t *readSemaphores[20];
+    sem_t *writeSemaphores[20];
+    char filename[FILE_NAME_SIZE];
+
+    for (int i = 1; i <= 20; i++)
+    {
+        snprintf(filename, FILE_NAME_SIZE, READ_SEMAPHORE_FORMAT, i);
+        readSemaphores[i - 1] = sem_open(filename, O_CREAT | O_EXCL, 0644, 1);
+        if (readSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing read semaphore in sem_open");
+            exit(1);
+        }
+        if (sem_close(readSemaphores[i - 1]) == -1)
+        {
+            perror("Error closing read semaphore in sem_close");
+            exit(1);
+        }
+
+        snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+        writeSemaphores[i - 1] = sem_open(filename, O_CREAT | O_EXCL, 0644, 1);
+        if (writeSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing write semaphore in sem_open");
+            exit(1);
+        }
+        if (sem_close(writeSemaphores[i - 1]) == -1)
+        {
+            perror("Error closing write semaphore in sem_close");
+            exit(1);
+        }
+    }
+
     printf("Load balancer initialized. Listening for requests.\n");
 
     while (1)
@@ -71,6 +105,16 @@ int main()
 
             printf("Load Balancer exiting...\n");
             break;
+
+            // named semaphore cleanup
+            char filename[FILE_NAME_SIZE];
+            for (int i = 1; i <= 20; i++)
+            {
+                snprintf(filename, FILE_NAME_SIZE, READ_SEMAPHORE_FORMAT, i);
+                sem_unlink(filename);
+                snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+                sem_unlink(filename);
+            }
         }
 
         if (messageBuffer.operationNumber <= 2)
