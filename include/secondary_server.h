@@ -1,6 +1,7 @@
 #ifndef SECONDARY_SERVER_H
 #define SECONDARY_SERVER_H
 
+#include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>

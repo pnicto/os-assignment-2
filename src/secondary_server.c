@@ -1,8 +1,47 @@
 #include "../include/secondary_server.h"
 
+int extractNumber(char *filename)
+{
+    int number;
+    sscanf(filename, "G%d.txt", &number);
+    return number;
+}
+
+sem_t *readSemaphores[20];
+sem_t *writeSemaphores[20];
+int numReaders = 0;
+pthread_mutex_t readMutex;
+
 int main(int argc, char *argv[])
 {
     printf("Initializing secondary server...\n");
+
+    // open named semaphores
+    char filename[FILE_NAME_SIZE];
+    for (int i = 1; i <= 20; i++)
+    {
+        snprintf(filename, FILE_NAME_SIZE, READ_SEMAPHORE_FORMAT, i);
+        readSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
+        if (readSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing read semaphore in sem_open");
+            exit(1);
+        }
+
+        snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+        writeSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
+        if (writeSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing write semaphore in sem_open");
+            exit(1);
+        }
+    }
+
+    if (pthread_mutex_init(&readMutex, NULL) != 0)
+    {
+        perror("pthread mutex init");
+        exit(1);
+    }
 
     int messageQueueID;
     key_t messageQueueKey;
@@ -311,6 +350,17 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     // TODO: Add named semaphore to make sure both read and write don't happen
     // together
+    pthread_mutex_lock(&readMutex);
+    numReaders++;
+    if (numReaders == 1)
+    {
+        int n = extractNumber(msg.graphFileName);
+        printf("Waiting for file\n");
+        sem_wait(writeSemaphores[n - 1]);
+    }
+    pthread_mutex_unlock(&readMutex);
+
+
     FILE *fp = fopen(msg.graphFileName, "r");
 
     if (fp == NULL)
@@ -334,6 +384,15 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
     // TODO: release/increment semaphore
+    pthread_mutex_lock(&readMutex);
+    numReaders--;
+    if (numReaders == 0)
+    {
+        int n = extractNumber(msg.graphFileName);
+        sem_post(writeSemaphores[n - 1]);
+    }
+
+    pthread_mutex_unlock(&readMutex);
 
     int outputLength = 0;
     int output[nodeCount];
