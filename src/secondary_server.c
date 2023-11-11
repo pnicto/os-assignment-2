@@ -365,8 +365,6 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
         printf("Waiting for file\n");
         sem_wait(writeSemaphores[n - 1]);
     }
-    pthread_mutex_unlock(&readMutex);
-
 
     FILE *fp = fopen(msg.graphFileName, "r");
 
@@ -398,8 +396,6 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
         int n = extractNumber(msg.graphFileName);
         sem_post(writeSemaphores[n - 1]);
     }
-
-    pthread_mutex_unlock(&readMutex);
 
     int outputLength = 0;
     int output[nodeCount];
