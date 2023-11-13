@@ -104,10 +104,7 @@ int main()
                 exit(1);
             }
 
-            printf("Load Balancer exiting...\n");
-            break;
-
-            // named semaphore cleanup
+            // named semaphores cleanup
             sem_unlink(READ_COUNT_SEMAPHORE_NAME);
             char filename[FILE_NAME_SIZE];
             for (int i = 1; i <= 20; i++)
@@ -115,6 +112,9 @@ int main()
                 snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
                 sem_unlink(filename);
             }
+
+            printf("Load Balancer exiting...\n");
+            break;
         }
 
         if (messageBuffer.operationNumber <= 2)
