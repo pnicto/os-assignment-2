@@ -23,5 +23,6 @@ void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
 void modifyGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
                  int messageQueueID);
 void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp);
+int extractNumber(char *filename);
 
 #endif

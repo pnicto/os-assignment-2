@@ -1,12 +1,5 @@
 #include "../include/secondary_server.h"
 
-int extractNumber(char *filename)
-{
-    int number;
-    sscanf(filename, "G%d.txt", &number);
-    return number;
-}
-
 sem_t *writeSemaphores[20];
 sem_t *readCountSemaphore;
 int numReaders;
@@ -149,23 +142,23 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    // TODO: Add named semaphore to make sure both read and write don't happen
-    // together
     sem_post(readCountSemaphore);
     sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 1)
     {
         int n = extractNumber(msg.graphFileName);
-        printf("Waiting for file\n");
+        printf("Waiting for file %s to read\n", msg.graphFileName);
         sem_wait(writeSemaphores[n - 1]);
     }
-    FILE *fp = fopen(msg.graphFileName, "r");
 
+    FILE *fp = fopen(msg.graphFileName, "r");
     if (fp == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Reading file %s\n", msg.graphFileName);
 
     int nodeCount;
     fscanf(fp, "%d", &nodeCount);
@@ -182,7 +175,7 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     }
 
     fclose(fp);
-    // TODO: release/increment semaphore
+
     sem_wait(readCountSemaphore);
     sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 0)
@@ -355,24 +348,23 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    // TODO: Add named semaphore to make sure both read and write don't happen
-    // together
     sem_post(readCountSemaphore);
     sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 1)
     {
         int n = extractNumber(msg.graphFileName);
-        printf("Waiting for file\n");
+        printf("Waiting for file %s to read\n", msg.graphFileName);
         sem_wait(writeSemaphores[n - 1]);
     }
 
     FILE *fp = fopen(msg.graphFileName, "r");
-
     if (fp == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Reading file %s\n", msg.graphFileName);
 
     int nodeCount;
     fscanf(fp, "%d", &nodeCount);
@@ -388,7 +380,7 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     }
 
     fclose(fp);
-    // TODO: release/increment semaphore
+
     sem_wait(readCountSemaphore);
     sem_getvalue(readCountSemaphore, &numReaders);
     if (numReaders == 0)
@@ -522,4 +514,11 @@ void initDfsArgs(struct DfsThreadArgs *destination,
     destination->output = source->output;
     destination->outputLength = source->outputLength;
     destination->args = source->args;
+}
+
+int extractNumber(char *filename)
+{
+    int number;
+    sscanf(filename, "G%d.txt", &number);
+    return number;
 }

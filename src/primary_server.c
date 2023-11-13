@@ -1,12 +1,5 @@
 #include "../include/primary_server.h"
 
-int extractNumber(char *filename)
-{
-    int number;
-    sscanf(filename, "G%d.txt", &number);
-    return number;
-}
-
 sem_t *writeSemaphores[20];
 
 int main()
@@ -166,15 +159,15 @@ void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
     int n = extractNumber(msg.graphFileName);
     printf("Waiting for file %s to write\n", msg.graphFileName);
     sem_wait(writeSemaphores[n - 1]);
-    printf("Writing to file %s\n", msg.graphFileName);
 
     FILE *fptr = fopen(msg.graphFileName, "w");
-
     if (fptr == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Writing to file %s\n", msg.graphFileName);
 
     char nodes[3];
     sprintf(nodes, "%d\n", shmp->nodes);
@@ -185,4 +178,11 @@ void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
     }
     fclose(fptr);
     sem_post(writeSemaphores[n - 1]);
+}
+
+int extractNumber(char *filename)
+{
+    int number;
+    sscanf(filename, "G%d.txt", &number);
+    return number;
 }

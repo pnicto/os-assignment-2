@@ -1,6 +1,7 @@
 #ifndef SECONDARY_SERVER_H
 #define SECONDARY_SERVER_H
 
+#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -11,9 +12,8 @@
 #include <sys/msg.h>
 #include <sys/shm.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <errno.h>
+#include <unistd.h>
 
 #include "utils.h"
 
@@ -47,5 +47,6 @@ void initBfsArgs(struct BfsThreadArgs *destination,
                  const struct BfsThreadArgs *source, int vertex);
 void initDfsArgs(struct DfsThreadArgs *destination,
                  const struct DfsThreadArgs *source, int vertex);
+int extractNumber(char *filename);
 
 #endif
