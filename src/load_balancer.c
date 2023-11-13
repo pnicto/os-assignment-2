@@ -19,6 +19,41 @@ int main()
         exit(1);
     }
 
+    // create named semaphores
+    sem_t *writeSemaphores[20];
+    sem_t *readCountSemaphore;
+    char filename[FILE_NAME_SIZE];
+
+    readCountSemaphore =
+        sem_open(READ_COUNT_SEMAPHORE_NAME, O_CREAT | O_EXCL, 0644, 0);
+    if (readCountSemaphore == SEM_FAILED)
+    {
+        perror("Error initializing read count semaphore in sem_open");
+        exit(1);
+    }
+    if (sem_close(readCountSemaphore) == -1)
+    {
+
+        perror("Error closing read count semaphore in sem_close");
+        exit(1);
+    }
+
+    for (int i = 1; i <= 20; i++)
+    {
+        snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+        writeSemaphores[i - 1] = sem_open(filename, O_CREAT | O_EXCL, 0644, 1);
+        if (writeSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing write semaphore in sem_open");
+            exit(1);
+        }
+        if (sem_close(writeSemaphores[i - 1]) == -1)
+        {
+            perror("Error closing write semaphore in sem_close");
+            exit(1);
+        }
+    }
+
     printf("Load balancer initialized. Listening for requests.\n");
 
     while (1)
@@ -67,6 +102,15 @@ int main()
             if (msgctl(messageQueueID, IPC_RMID, NULL) == -1) {
                 perror("Removing queue failed");
                 exit(1);
+            }
+
+            // named semaphores cleanup
+            sem_unlink(READ_COUNT_SEMAPHORE_NAME);
+            char filename[FILE_NAME_SIZE];
+            for (int i = 1; i <= 20; i++)
+            {
+                snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+                sem_unlink(filename);
             }
 
             printf("Load Balancer exiting...\n");

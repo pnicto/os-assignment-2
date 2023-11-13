@@ -1,8 +1,32 @@
 #include "../include/secondary_server.h"
 
+sem_t *writeSemaphores[20];
+sem_t *readCountSemaphore;
+int numReaders;
+
 int main(int argc, char *argv[])
 {
     printf("Initializing secondary server...\n");
+
+    // open named semaphores
+    char filename[FILE_NAME_SIZE];
+    for (int i = 1; i <= 20; i++)
+    {
+        snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+        writeSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
+        if (writeSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing write semaphore in sem_open");
+            exit(1);
+        }
+    }
+
+    readCountSemaphore = sem_open(READ_COUNT_SEMAPHORE_NAME, O_EXCL, 0644, 1);
+    if (readCountSemaphore == SEM_FAILED)
+    {
+        perror("Error initializing read count semaphore in sem_open");
+        exit(1);
+    }
 
     int messageQueueID;
     key_t messageQueueKey;
@@ -118,15 +142,23 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    // TODO: Add named semaphore to make sure both read and write don't happen
-    // together
-    FILE *fp = fopen(msg.graphFileName, "r");
+    sem_post(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 1)
+    {
+        int n = extractNumber(msg.graphFileName);
+        printf("Waiting for file %s to read\n", msg.graphFileName);
+        sem_wait(writeSemaphores[n - 1]);
+    }
 
+    FILE *fp = fopen(msg.graphFileName, "r");
     if (fp == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Reading file %s\n", msg.graphFileName);
 
     int nodeCount;
     fscanf(fp, "%d", &nodeCount);
@@ -143,7 +175,14 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     }
 
     fclose(fp);
-    // TODO: release/increment semaphore
+
+    sem_wait(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 0)
+    {
+        int n = extractNumber(msg.graphFileName);
+        sem_post(writeSemaphores[n - 1]);
+    }
 
     /* outputLength is the number of vertices in the output array
 
@@ -309,15 +348,23 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    // TODO: Add named semaphore to make sure both read and write don't happen
-    // together
-    FILE *fp = fopen(msg.graphFileName, "r");
+    sem_post(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 1)
+    {
+        int n = extractNumber(msg.graphFileName);
+        printf("Waiting for file %s to read\n", msg.graphFileName);
+        sem_wait(writeSemaphores[n - 1]);
+    }
 
+    FILE *fp = fopen(msg.graphFileName, "r");
     if (fp == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Reading file %s\n", msg.graphFileName);
 
     int nodeCount;
     fscanf(fp, "%d", &nodeCount);
@@ -333,7 +380,14 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     }
 
     fclose(fp);
-    // TODO: release/increment semaphore
+
+    sem_wait(readCountSemaphore);
+    sem_getvalue(readCountSemaphore, &numReaders);
+    if (numReaders == 0)
+    {
+        int n = extractNumber(msg.graphFileName);
+        sem_post(writeSemaphores[n - 1]);
+    }
 
     int outputLength = 0;
     int output[nodeCount];
@@ -460,4 +514,11 @@ void initDfsArgs(struct DfsThreadArgs *destination,
     destination->output = source->output;
     destination->outputLength = source->outputLength;
     destination->args = source->args;
+}
+
+int extractNumber(char *filename)
+{
+    int number;
+    sscanf(filename, "G%d.txt", &number);
+    return number;
 }

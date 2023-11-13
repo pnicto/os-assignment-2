@@ -1,8 +1,23 @@
 #include "../include/primary_server.h"
 
+sem_t *writeSemaphores[20];
+
 int main()
 {
     printf("Initializing primary server...\n");
+
+    // open named semaphores
+    char filename[FILE_NAME_SIZE];
+    for (int i = 1; i <= 20; i++)
+    {
+        snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
+        writeSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
+        if (writeSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing write semaphore in sem_open");
+            exit(1);
+        }
+    }
 
     int messageQueueID;
     key_t messageQueueKey;
@@ -141,13 +156,18 @@ void modifyGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
 
 void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
 {
-    FILE *fptr = fopen(msg.graphFileName, "w");
+    int n = extractNumber(msg.graphFileName);
+    printf("Waiting for file %s to write\n", msg.graphFileName);
+    sem_wait(writeSemaphores[n - 1]);
 
+    FILE *fptr = fopen(msg.graphFileName, "w");
     if (fptr == NULL)
     {
         perror("Error opening file");
         exit(1);
     }
+
+    printf("Writing to file %s\n", msg.graphFileName);
 
     char nodes[3];
     sprintf(nodes, "%d\n", shmp->nodes);
@@ -157,4 +177,12 @@ void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
         fputs(shmp->adjMatrix + (100 * i), fptr);
     }
     fclose(fptr);
+    sem_post(writeSemaphores[n - 1]);
+}
+
+int extractNumber(char *filename)
+{
+    int number;
+    sscanf(filename, "G%d.txt", &number);
+    return number;
 }

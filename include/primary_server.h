@@ -2,7 +2,9 @@
 #define PRIMARY_SERVER_H
 
 #include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,5 +23,6 @@ void addGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
 void modifyGraph(struct ShmSeg *shmp, struct MessageBuffer msg,
                  int messageQueueID);
 void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp);
+int extractNumber(char *filename);
 
 #endif

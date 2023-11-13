@@ -2,6 +2,8 @@
 #define LOAD_BALANCER_H
 
 #include <errno.h>
+#include <fcntl.h>
+#include <semaphore.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
