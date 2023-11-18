@@ -76,7 +76,9 @@ int main()
             requestBuffer.sequenceNumber = -1;
 
             if (msgsnd(messageQueueID, &requestBuffer,
-                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                       sizeof(requestBuffer) - sizeof(requestBuffer.mtype),
+                       0) == -1)
+            {
                 perror("Error sending message in msgsnd");
                 exit(1);
             }
@@ -84,7 +86,9 @@ int main()
             requestBuffer.sequenceNumber = -1;
 
             if (msgsnd(messageQueueID, &requestBuffer,
-                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                       sizeof(requestBuffer) - sizeof(requestBuffer.mtype),
+                       0) == -1)
+            {
                 perror("Error sending message in msgsnd");
                 exit(1);
             }
@@ -92,25 +96,36 @@ int main()
             requestBuffer.sequenceNumber = -1;
 
             if (msgsnd(messageQueueID, &requestBuffer,
-                        sizeof(requestBuffer) - sizeof(requestBuffer.mtype), 0) == -1) {
+                       sizeof(requestBuffer) - sizeof(requestBuffer.mtype),
+                       0) == -1)
+            {
                 perror("Error sending message in msgsnd");
                 exit(1);
             }
 
             sleep(5);
             printf("Removing message queue...\n");
-            if (msgctl(messageQueueID, IPC_RMID, NULL) == -1) {
+            if (msgctl(messageQueueID, IPC_RMID, NULL) == -1)
+            {
                 perror("Removing queue failed");
                 exit(1);
             }
 
             // named semaphores cleanup
-            sem_unlink(READ_COUNT_SEMAPHORE_NAME);
+            if (sem_unlink(READ_COUNT_SEMAPHORE_NAME) == -1)
+            {
+                perror("Error unlinking read count semaphore in sem_unlink");
+                exit(1);
+            }
             char filename[FILE_NAME_SIZE];
             for (int i = 1; i <= 20; i++)
             {
                 snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
-                sem_unlink(filename);
+                if (sem_unlink(filename) == -1)
+                {
+                    perror("Error unlinking write semaphore in sem_unlink");
+                    exit(1);
+                }
             }
 
             printf("Load Balancer exiting...\n");
