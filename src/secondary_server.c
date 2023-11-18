@@ -1,7 +1,7 @@
 #include "../include/secondary_server.h"
 
 sem_t *writeSemaphores[20];
-sem_t *readCountSemaphore;
+sem_t *readCountSemaphores[20];
 int numReaders;
 
 int main(int argc, char *argv[])
@@ -21,11 +21,15 @@ int main(int argc, char *argv[])
         }
     }
 
-    readCountSemaphore = sem_open(READ_COUNT_SEMAPHORE_NAME, O_EXCL, 0644, 1);
-    if (readCountSemaphore == SEM_FAILED)
+    for (int i = 1; i <= 20; i++)
     {
-        perror("Error initializing read count semaphore in sem_open");
-        exit(1);
+        snprintf(filename, FILE_NAME_SIZE, READ_COUNT_SEMAPHORE_NAME, i);
+        readCountSemaphores[i - 1] = sem_open(filename, O_EXCL, 0644, 1);
+        if (readCountSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing read count semaphore in sem_open");
+            exit(1);
+        }
     }
 
     int messageQueueID;
@@ -140,20 +144,20 @@ static void *threadFunc(void *arg)
 void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
+    int n = extractNumber(msg.graphFileName);
 
-    if (sem_post(readCountSemaphore) == -1)
+    if (sem_post(readCountSemaphores[n - 1]) == -1)
     {
         perror("Error in sem_post");
         exit(1);
     }
-    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    if (sem_getvalue(readCountSemaphores[n - 1], &numReaders) == -1)
     {
         perror("Error in sem_getvalue");
         exit(1);
     }
     if (numReaders == 1)
     {
-        int n = extractNumber(msg.graphFileName);
         printf("Waiting for file %s to read\n", msg.graphFileName);
         if (sem_wait(writeSemaphores[n - 1]) == -1)
         {
@@ -188,12 +192,12 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
 
-    if (sem_wait(readCountSemaphore) == -1)
+    if (sem_wait(readCountSemaphores[n - 1]) == -1)
     {
         perror("Error in sem_wait");
         exit(1);
     }
-    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    if (sem_getvalue(readCountSemaphores[n - 1], &numReaders) == -1)
     {
         perror("Error in sem_getvalue");
         exit(1);
@@ -464,20 +468,20 @@ static void *bfsThreadFunction(void *args)
 void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
+    int n = extractNumber(msg.graphFileName);
 
-    if (sem_post(readCountSemaphore) == -1)
+    if (sem_post(readCountSemaphores[n - 1]) == -1)
     {
         perror("Error in sem_post");
         exit(1);
     }
-    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    if (sem_getvalue(readCountSemaphores[n - 1], &numReaders) == -1)
     {
         perror("Error in sem_getvalue");
         exit(1);
     }
     if (numReaders == 1)
     {
-        int n = extractNumber(msg.graphFileName);
         printf("Waiting for file %s to read\n", msg.graphFileName);
         sem_wait(writeSemaphores[n - 1]);
         printf("Acquired file %s\n", msg.graphFileName);
@@ -507,12 +511,12 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
 
-    if (sem_wait(readCountSemaphore) == -1)
+    if (sem_wait(readCountSemaphores[n - 1]) == -1)
     {
         perror("Error in sem_wait");
         exit(1);
     }
-    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    if (sem_getvalue(readCountSemaphores[n - 1], &numReaders) == -1)
     {
         perror("Error in sem_getvalue");
         exit(1);

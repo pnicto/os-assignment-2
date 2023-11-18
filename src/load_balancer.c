@@ -21,21 +21,25 @@ int main()
 
     // create named semaphores
     sem_t *writeSemaphores[20];
-    sem_t *readCountSemaphore;
+    sem_t *readCountSemaphores[20];
     char filename[FILE_NAME_SIZE];
 
-    readCountSemaphore =
-        sem_open(READ_COUNT_SEMAPHORE_NAME, O_CREAT | O_EXCL, 0644, 0);
-    if (readCountSemaphore == SEM_FAILED)
+    for (int i = 1; i <= 20; i++)
     {
-        perror("Error initializing read count semaphore in sem_open");
-        exit(1);
-    }
-    if (sem_close(readCountSemaphore) == -1)
-    {
+        snprintf(filename, FILE_NAME_SIZE, READ_COUNT_SEMAPHORE_NAME, i);
+        readCountSemaphores[i - 1] =
+            sem_open(filename, O_CREAT | O_EXCL, 0644, 0);
+        if (readCountSemaphores[i - 1] == SEM_FAILED)
+        {
+            perror("Error initializing read count semaphore in sem_open");
+            exit(1);
+        }
+        if (sem_close(readCountSemaphores[i - 1]) == -1)
+        {
 
-        perror("Error closing read count semaphore in sem_close");
-        exit(1);
+            perror("Error closing read count semaphore in sem_close");
+            exit(1);
+        }
     }
 
     for (int i = 1; i <= 20; i++)
@@ -112,12 +116,18 @@ int main()
             }
 
             // named semaphores cleanup
-            if (sem_unlink(READ_COUNT_SEMAPHORE_NAME) == -1)
-            {
-                perror("Error unlinking read count semaphore in sem_unlink");
-                exit(1);
-            }
             char filename[FILE_NAME_SIZE];
+            for (int i = 1; i <= 20; i++)
+            {
+                snprintf(filename, FILE_NAME_SIZE, READ_COUNT_SEMAPHORE_NAME,
+                         i);
+                if (sem_unlink(filename) == -1)
+                {
+                    perror(
+                        "Error unlinking read count semaphore in sem_unlink");
+                    exit(1);
+                }
+            }
             for (int i = 1; i <= 20; i++)
             {
                 snprintf(filename, FILE_NAME_SIZE, WRITE_SEMAPHORE_FORMAT, i);
