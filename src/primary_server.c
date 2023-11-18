@@ -62,7 +62,7 @@ int main()
                     exit(1);
                 }
             }
-            //is there anything else to do here?
+            // is there anything else to do here?
             printf("Terminating Primary Server...\n");
             exit(0);
         }
@@ -158,7 +158,12 @@ void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
 {
     int n = extractNumber(msg.graphFileName);
     printf("Waiting for file %s to write\n", msg.graphFileName);
-    sem_wait(writeSemaphores[n - 1]);
+    if (sem_wait(writeSemaphores[n - 1]) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
+    printf("Acquired file %s\n", msg.graphFileName);
 
     FILE *fptr = fopen(msg.graphFileName, "w");
     if (fptr == NULL)
@@ -176,8 +181,13 @@ void writeToFile(struct MessageBuffer msg, struct ShmSeg *shmp)
     {
         fputs(shmp->adjMatrix + (100 * i), fptr);
     }
+
     fclose(fptr);
-    sem_post(writeSemaphores[n - 1]);
+    if (sem_post(writeSemaphores[n - 1]) == -1)
+    {
+        perror("Error in sem_post");
+        exit(1);
+    }
 }
 
 int extractNumber(char *filename)

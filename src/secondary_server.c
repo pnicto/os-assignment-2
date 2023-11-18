@@ -84,11 +84,10 @@ int main(int argc, char *argv[])
             {
                 if (pthread_join(threads[i], NULL))
                 {
-                    perror("pthread_join");
+                    perror("Error in pthread_join");
                     exit(1);
                 }
             }
-            //is there anything else to do here?
             printf("Terminating Secondary Server...\n");
             exit(0);
         }
@@ -142,13 +141,26 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    sem_post(readCountSemaphore);
-    sem_getvalue(readCountSemaphore, &numReaders);
+    if (sem_post(readCountSemaphore) == -1)
+    {
+        perror("Error in sem_post");
+        exit(1);
+    }
+    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    {
+        perror("Error in sem_getvalue");
+        exit(1);
+    }
     if (numReaders == 1)
     {
         int n = extractNumber(msg.graphFileName);
         printf("Waiting for file %s to read\n", msg.graphFileName);
-        sem_wait(writeSemaphores[n - 1]);
+        if (sem_wait(writeSemaphores[n - 1]) == -1)
+        {
+            perror("Error in sem_wait");
+            exit(1);
+        }
+        printf("Acquired file %s\n", msg.graphFileName);
     }
 
     FILE *fp = fopen(msg.graphFileName, "r");
@@ -176,12 +188,24 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
 
-    sem_wait(readCountSemaphore);
-    sem_getvalue(readCountSemaphore, &numReaders);
+    if (sem_wait(readCountSemaphore) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
+    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    {
+        perror("Error in sem_getvalue");
+        exit(1);
+    }
     if (numReaders == 0)
     {
         int n = extractNumber(msg.graphFileName);
-        sem_post(writeSemaphores[n - 1]);
+        if (sem_post(writeSemaphores[n - 1]) == -1)
+        {
+            perror("Error in sem_post");
+            exit(1);
+        }
     }
 
     /* outputLength is the number of vertices in the output array
@@ -196,9 +220,9 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     // Initialize mutexes and semaphores
     pthread_mutex_t outputMutex, countStartMutex, countEndMutex;
-    if (pthread_mutex_init(&outputMutex, NULL) == -1 ||
-        pthread_mutex_init(&countStartMutex, NULL) == -1 ||
-        pthread_mutex_init(&countEndMutex, NULL) == -1)
+    if (pthread_mutex_init(&outputMutex, NULL) ||
+        pthread_mutex_init(&countStartMutex, NULL) ||
+        pthread_mutex_init(&countEndMutex, NULL))
     {
         perror("Error initializing mutex");
         exit(1);
@@ -230,18 +254,39 @@ void bfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     args[startingVertex].startSemaphore = &startSemaphore;
     args[startingVertex].endSemaphore = &endSemaphore;
 
-    sem_wait(&startSemaphore);
+    if (sem_wait(&startSemaphore) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
 
     pthread_t thread;
-    pthread_create(&thread, NULL, bfsThreadFunction,
-                   (void *)&args[startingVertex]);
-    pthread_join(thread, NULL);
+    if (pthread_create(&thread, NULL, bfsThreadFunction,
+                       (void *)&args[startingVertex]))
+    {
+        perror("Error in pthread_create");
+        exit(1);
+    }
 
-    pthread_mutex_destroy(&outputMutex);
-    pthread_mutex_destroy(&countStartMutex);
-    pthread_mutex_destroy(&countEndMutex);
-    sem_destroy(&startSemaphore);
-    sem_destroy(&endSemaphore);
+    if (pthread_join(thread, NULL))
+    {
+        perror("Error in pthread_join");
+        exit(1);
+    }
+
+    if (pthread_mutex_destroy(&outputMutex) ||
+        pthread_mutex_destroy(&countStartMutex) ||
+        pthread_mutex_destroy(&countEndMutex))
+    {
+        perror("Error destroying mutex");
+        exit(1);
+    }
+
+    if (sem_destroy(&startSemaphore) == -1 || sem_destroy(&endSemaphore) == -1)
+    {
+        perror("Error destroying semaphore");
+        exit(1);
+    }
 
     char responseString[RESPONSE_SIZE] = {0};
 
@@ -270,20 +315,44 @@ static void *bfsThreadFunction(void *args)
 {
     struct BfsThreadArgs *threadArgs = (struct BfsThreadArgs *)args;
 
-    pthread_mutex_lock(threadArgs->countStartMutex);
+    if (pthread_mutex_lock(threadArgs->countStartMutex))
+    {
+        perror("Error in pthread_mutex_lock");
+        exit(1);
+    }
     (*(threadArgs->threadCountNext))--;
     if (*(threadArgs->threadCountNext) == 0)
     {
         // If all threads at current depth have started, lock the end semaphore
         // and unlock the start semaphore
-        sem_wait(threadArgs->endSemaphore);
-        sem_post(threadArgs->startSemaphore);
+        if (sem_wait(threadArgs->endSemaphore) == -1)
+        {
+            perror("Error in sem_wait");
+            exit(1);
+        }
+        if (sem_post(threadArgs->startSemaphore) == -1)
+        {
+            perror("Error in sem_post");
+            exit(1);
+        }
     }
-    pthread_mutex_unlock(threadArgs->countStartMutex);
+    if (pthread_mutex_unlock(threadArgs->countStartMutex))
+    {
+        perror("Error in pthread_mutex_unlock");
+        exit(1);
+    }
 
     // Wait for all threads at current depth to start
-    sem_wait(threadArgs->startSemaphore);
-    sem_post(threadArgs->startSemaphore);
+    if (sem_wait(threadArgs->startSemaphore) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
+    if (sem_post(threadArgs->startSemaphore) == -1)
+    {
+        perror("Error in sem_post");
+        exit(1);
+    }
 
     pthread_t threads[threadArgs->nodeCount];
     int childNodes[threadArgs->nodeCount];
@@ -296,22 +365,42 @@ static void *bfsThreadFunction(void *args)
                                    i] == 1) &&
             (i != threadArgs->previousVertex))
         {
-            pthread_mutex_lock(threadArgs->countEndMutex);
+            if (pthread_mutex_lock(threadArgs->countEndMutex))
+            {
+                perror("Error in pthread_mutex_lock");
+                exit(1);
+            }
             (*(threadArgs->threadCountNext))++;
-            pthread_mutex_unlock(threadArgs->countEndMutex);
+            if (pthread_mutex_unlock(threadArgs->countEndMutex))
+            {
+                perror("Error in pthread_mutex_unlock");
+                exit(1);
+            }
 
             childNodes[childThreadCount] = i;
             childThreadCount++;
         }
     }
 
-    pthread_mutex_lock(threadArgs->outputMutex);
+    if (pthread_mutex_lock(threadArgs->outputMutex))
+    {
+        perror("Error in pthread_mutex_lock");
+        exit(1);
+    }
     threadArgs->output[*(threadArgs->outputLength)] =
         threadArgs->vertex + 1; // +1 because of 0 indexing
     *(threadArgs->outputLength) = *(threadArgs->outputLength) + 1;
-    pthread_mutex_unlock(threadArgs->outputMutex);
+    if (pthread_mutex_unlock(threadArgs->outputMutex))
+    {
+        perror("Error in pthread_mutex_unlock");
+        exit(1);
+    }
 
-    pthread_mutex_lock(threadArgs->countEndMutex);
+    if (pthread_mutex_lock(threadArgs->countEndMutex))
+    {
+        perror("Error in pthread_mutex_lock");
+        exit(1);
+    }
     (*(threadArgs->threadCountCurrent))--;
     if (*(threadArgs->threadCountCurrent) == 0)
     {
@@ -319,26 +408,54 @@ static void *bfsThreadFunction(void *args)
         // and unlock the end semaphore
         // Also set the thread count for the next depth
         *(threadArgs->threadCountCurrent) = *(threadArgs->threadCountNext);
-        sem_wait(threadArgs->startSemaphore);
-        sem_post(threadArgs->endSemaphore);
+        if (sem_wait(threadArgs->startSemaphore) == -1)
+        {
+            perror("Error in sem_wait");
+            exit(1);
+        }
+        if (sem_post(threadArgs->endSemaphore) == -1)
+        {
+            perror("Error in sem_post");
+            exit(1);
+        }
     }
-    pthread_mutex_unlock(threadArgs->countEndMutex);
+    if (pthread_mutex_unlock(threadArgs->countEndMutex))
+    {
+        perror("Error in pthread_mutex_unlock");
+        exit(1);
+    }
 
-    sem_wait(threadArgs->endSemaphore);
-    sem_post(threadArgs->endSemaphore);
+    if (sem_wait(threadArgs->endSemaphore) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
+    if (sem_post(threadArgs->endSemaphore) == -1)
+    {
+        perror("Error in sem_post");
+        exit(1);
+    }
 
     for (int i = 0; i < childThreadCount; i++)
     {
         initBfsArgs(&(threadArgs->args[childNodes[i]]), threadArgs,
                     childNodes[i]);
 
-        pthread_create(&threads[i], NULL, bfsThreadFunction,
-                       (void *)&threadArgs->args[childNodes[i]]);
+        if (pthread_create(&threads[i], NULL, bfsThreadFunction,
+                           (void *)&threadArgs->args[childNodes[i]]))
+        {
+            perror("Error in pthread_create");
+            exit(1);
+        }
     }
 
     for (int i = 0; i < childThreadCount; i++)
     {
-        pthread_join(threads[i], NULL);
+        if (pthread_join(threads[i], NULL))
+        {
+            perror("Error in pthread_join");
+            exit(1);
+        }
     }
 
     pthread_exit(NULL);
@@ -348,13 +465,22 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 {
     int startingVertex = shmp[0] - 1; // -1 because of 0 indexing
 
-    sem_post(readCountSemaphore);
-    sem_getvalue(readCountSemaphore, &numReaders);
+    if (sem_post(readCountSemaphore) == -1)
+    {
+        perror("Error in sem_post");
+        exit(1);
+    }
+    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    {
+        perror("Error in sem_getvalue");
+        exit(1);
+    }
     if (numReaders == 1)
     {
         int n = extractNumber(msg.graphFileName);
         printf("Waiting for file %s to read\n", msg.graphFileName);
         sem_wait(writeSemaphores[n - 1]);
+        printf("Acquired file %s\n", msg.graphFileName);
     }
 
     FILE *fp = fopen(msg.graphFileName, "r");
@@ -381,21 +507,33 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
 
     fclose(fp);
 
-    sem_wait(readCountSemaphore);
-    sem_getvalue(readCountSemaphore, &numReaders);
+    if (sem_wait(readCountSemaphore) == -1)
+    {
+        perror("Error in sem_wait");
+        exit(1);
+    }
+    if (sem_getvalue(readCountSemaphore, &numReaders) == -1)
+    {
+        perror("Error in sem_getvalue");
+        exit(1);
+    }
     if (numReaders == 0)
     {
         int n = extractNumber(msg.graphFileName);
-        sem_post(writeSemaphores[n - 1]);
+        if (sem_post(writeSemaphores[n - 1]) == -1)
+        {
+            perror("Error in sem_post");
+            exit(1);
+        }
     }
 
     int outputLength = 0;
     int output[nodeCount];
 
     pthread_mutex_t mutex;
-    if (pthread_mutex_init(&mutex, NULL) == -1)
+    if (pthread_mutex_init(&mutex, NULL))
     {
-        perror("Error initializing mutex");
+        perror("Error in pthread_mutex_init");
         exit(1);
     }
 
@@ -411,11 +549,24 @@ void dfs(struct MessageBuffer msg, int *shmp, int messageQueueID)
     args[startingVertex].args = args;
 
     pthread_t thread;
-    pthread_create(&thread, NULL, dfsThreadFunction,
-                   (void *)&args[startingVertex]);
+    if (pthread_create(&thread, NULL, dfsThreadFunction,
+                       (void *)&args[startingVertex]))
+    {
+        perror("Error in pthread_create");
+        exit(1);
+    }
 
-    pthread_join(thread, NULL);
-    pthread_mutex_destroy(&mutex);
+    if (pthread_join(thread, NULL))
+    {
+        perror("Error in pthread_join");
+        exit(1);
+    }
+
+    if (pthread_mutex_destroy(&mutex))
+    {
+        perror("Error in pthread_mutex_destroy");
+        exit(1);
+    }
 
     char responseString[RESPONSE_SIZE] = {0};
 
@@ -459,25 +610,41 @@ static void *dfsThreadFunction(void *args)
 
             initDfsArgs(&(threadArgs->args[i]), threadArgs, i);
 
-            pthread_create(&threads[childThreadCount], NULL, dfsThreadFunction,
-                           (void *)&threadArgs->args[i]);
+            if (pthread_create(&threads[childThreadCount], NULL,
+                               dfsThreadFunction, (void *)&threadArgs->args[i]))
+            {
+                perror("Error in pthread_create");
+                exit(1);
+            }
             childThreadCount++;
         }
     }
 
     if (isLeaf)
     {
-        pthread_mutex_lock(threadArgs->mutex);
+        if (pthread_mutex_lock(threadArgs->mutex))
+        {
+            perror("Error in pthread_mutex_lock");
+            exit(1);
+        }
         threadArgs->output[*(threadArgs->outputLength)] =
             threadArgs->vertex + 1; // +1 because of 0 indexing
         *(threadArgs->outputLength) = *(threadArgs->outputLength) + 1;
-        pthread_mutex_unlock(threadArgs->mutex);
+        if (pthread_mutex_unlock(threadArgs->mutex))
+        {
+            perror("Error in pthread_mutex_unlock");
+            exit(1);
+        }
     }
     else
     {
         for (int i = 0; i < childThreadCount; i++)
         {
-            pthread_join(threads[i], NULL);
+            if (pthread_join(threads[i], NULL))
+            {
+                perror("Error in pthread_join");
+                exit(1);
+            }
         }
     }
 
