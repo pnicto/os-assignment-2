@@ -21,7 +21,7 @@ int main()
     }
 
     if ((messageQueueID = msgget(messageQueueKey, PERMS)) == -1) {
-        perror("Error connecting to message queue in msgget. Is the server on?");
+        perror("Error connecting to message queue in msgget. Is the load balancer on?");
         exit(1);
     }
 
